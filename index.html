@@ -3388,22 +3388,37 @@
         }
 
         function switchTab(tabId) {
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
-        });
-        const activeTab = document.querySelector('[data-tab="' + tabId + '"]');
-        if (activeTab) {
+    });
+    const activeTab = document.querySelector('[data-tab="' + tabId + '"]');
+    if (activeTab) {
         activeTab.classList.add('active');
-        }
+    }
 
-        document.querySelectorAll('.tab-panel').forEach(panel => {
+    document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.remove('active');
-        });
-        const targetPanel = document.getElementById(tabId + '-tab');
-        if (targetPanel) {
+    });
+    const targetPanel = document.getElementById(tabId + '-tab');
+    if (targetPanel) {
         targetPanel.classList.add('active');
-        }
-        }
+    }
+    
+    // ✅ TAMBAH LOGIC INI - Load data berdasarkan tab yang aktif
+    if (tabId === 'customers') {
+        console.log('🔄 Loading customers data...');
+        loadCustomersData();
+    } else if (tabId === 'orders') {
+        console.log('🔄 Loading orders data...');
+        loadOrdersData();
+    } else if (tabId === 'dashboard') {
+        console.log('🔄 Loading dashboard data...');
+        updateCustomerEngagementCounts();
+    } else if (tabId === 'abtesting') {
+        console.log('🔄 Loading A/B testing data...');
+        // Bisa tambahin logic A/B testing di sini nanti
+    }
+}
 
         // ===== COURIER DETECTION =====
         function detectCourier(resi) {
@@ -6205,6 +6220,9 @@ function loadCustomerEngagementData() {
     // Load orders data
     loadOrdersData();
     
+    // ✅ TAMBAH INI - Load customers data for table
+    loadCustomersData();
+    
     // Load customers data for dropdown
     loadCustomersToDropdown();
     
@@ -6214,7 +6232,6 @@ function loadCustomerEngagementData() {
     // Update dashboard stats
     updateCustomerEngagementCounts();
 }
-
 
 // ===== ORDER TRACKING SYNC FUNCTIONS =====
 async function syncOrderTrackingStatus() {
