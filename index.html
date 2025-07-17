@@ -2608,7 +2608,7 @@
               <DIV CLASS="card">
                 <DIV STYLE="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                   <H4 STYLE="color: var(--blue); font-size: 1rem; margin: 0;">Database Customer</H4>
-                  <INPUT TYPE="text" CLASS="search-input" PLACEHOLDER="🔍 Cari customer..." ID="customerSearch" STYLE="width: 250px;">
+                  <INPUT TYPE="text" CLASS="search-input" PLACEHOLDER="🔍 Cari customer..." ID="customerSearch" STYLE="width: 180px; max-width: 180px;">
                 </DIV>
                 <DIV CLASS="table-container">
                   <TABLE CLASS="table">
@@ -5373,6 +5373,11 @@ async function loadCustomersData() {
         if (result.success) {
             updateCustomersTable(result.customers || []);
             updateCustomerBadgeCount(result.customers.length);
+            
+            // ✅ TAMBAHIN INI: Setup search setelah table di-render
+            setTimeout(() => {
+                setupCustomerSearch();
+            }, 100);
         }
     } catch (error) {
         console.error('Error loading customers:', error);
@@ -5411,28 +5416,31 @@ function updateCustomersTable(customers) {
         const segmentColor = customer.customer_segment === 'vip' ? 'var(--green)' :
                            customer.customer_segment === 'regular' ? 'var(--blue)' : 'var(--orange)';
         
-        row.innerHTML = `
-            <td style="font-weight: 600;">${customer.nama}</td>
-            <td style="font-family: monospace;">${customer.telepon}</td>
-            <td>${platformBadge}</td>
-            <td style="text-align: center; font-weight: 600;">${customer.total_orders}</td>
-            <td style="color: var(--green); font-weight: 600;">Rp ${formatNumber(customer.total_spent)}</td>
-            <td><span style="color: ${segmentColor}; font-weight: 600; text-transform: uppercase;">${customer.customer_segment}</span></td>
-            <td style="font-size: 0.8rem;">${lastOrderDate}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-secondary" onclick="showCustomerDetail(${customer.id})" title="Detail">
-                        👁️
-                    </button>
-                    <button class="btn btn-sm btn-info" onclick="sendManualWA('${customer.telepon}', '${customer.nama}')" title="Send WA">
-                        📱
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="editCustomer(${customer.id})" title="Edit">
-                        ✏️
-                    </button>
-                </div>
-            </td>
-        `;
+      row.innerHTML = `
+    <td style="font-weight: 600;">${customer.nama}</td>
+    <td style="font-family: monospace;">${customer.telepon}</td>
+    <td>${platformBadge}</td>
+    <td style="text-align: center; font-weight: 600;">${customer.total_orders}</td>
+    <td style="color: var(--green); font-weight: 600;">Rp ${formatNumber(customer.total_spent)}</td>
+    <td><span style="color: ${segmentColor}; font-weight: 600; text-transform: uppercase;">${customer.customer_segment}</span></td>
+    <td style="font-size: 0.8rem;">${lastOrderDate}</td>
+    <td style="text-align: center; vertical-align: middle; padding: 0.5rem;">
+        <div style="display: flex; gap: 0.25rem; justify-content: center; align-items: center;">
+            <button class="btn btn-sm btn-secondary" onclick="showCustomerDetail(${customer.id})" title="Detail" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                👁️
+            </button>
+            <button class="btn btn-sm btn-info" onclick="sendManualWA('${customer.telepon}', '${customer.nama}')" title="Send WA" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                📱
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="editCustomer(${customer.id})" title="Edit" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                ✏️
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id}, '${customer.nama}')" title="Hapus" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                🗑️
+            </button>
+        </div>
+    </td>
+`;
         tbody.appendChild(row);
     });
 }
@@ -5612,6 +5620,46 @@ function initializeCustomerManagement() {
     }, 30000);
 } 
         
+        
+        
+      // 10. Delete customer function
+async function deleteCustomer(customerId, customerName) {
+    // Confirmation dialog
+    if (!confirm(`Yakin mau hapus customer "${customerName}"?\n\nSemua data orders customer ini juga akan ikut terhapus!\n\nData akan dihapus permanen!`)) {
+        return;
+    }
+
+    showToast('🗑️ Menghapus customer...', 'info');
+
+    try {
+        const response = await fetch('database.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_customer',
+                customer_id: customerId,
+                user: currentUser,
+                device: currentDevice
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showToast(`✅ Customer "${customerName}" berhasil dihapus!`, 'success');
+            
+            // Refresh customer table
+            loadCustomersData();
+            
+            // Update badge count
+            updateCustomerBadgeCount(result.remaining_count || 0);
+        } else {
+            showToast('❌ Error: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showToast('❌ Error: ' + error.message, 'error');
+        console.error('Delete customer error:', error);
+    }
+}  
         
         
         // ===== ORDER TRACKING SYNC FUNCTIONS =====
